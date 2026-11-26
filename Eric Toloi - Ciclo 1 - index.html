@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Eric Toloi · Hellora Consultoria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --preto: #1a1a1a;
+    --preto-puro: #000000;
+    --cinza-claro: #f0f0f0;
+    --branco: #FFFFFF;
+    --tinta: #1a1a1a;
+    --tinta-suave: #666666;
+    --linha: #e5e5e5;
+    --sombra: 0 10px 28px rgba(26,26,26,0.12);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:'Jost', sans-serif;
+    background: var(--branco);
+    color: var(--tinta);
+    min-height:100vh;
+    padding-bottom: 90px;
+  }
+  .hero{
+    position:relative;
+    padding: 30px 20px 46px;
+    background: linear-gradient(135deg, #e8e8e8 0%, #fafafa 100%);
+    overflow:hidden;
+    color: var(--tinta);
+  }
+  .hero::after{
+    content:"";
+    position:absolute;
+    right:-60px; top:-60px;
+    width:220px; height:220px;
+    background: radial-gradient(circle, rgba(26,26,26,0.15) 0%, rgba(26,26,26,0) 70%);
+    border-radius:50%;
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    left:-40px; bottom:-80px;
+    width:180px; height:180px;
+    background: radial-gradient(circle, rgba(26,26,26,0.1) 0%, rgba(26,26,26,0) 70%);
+    border-radius:50%;
+  }
+  .hero-top{display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:2;}
+  .eyebrow{
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    opacity:.85; font-weight:500; color: var(--preto);
+  }
+  .nome{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500;
+    font-size:32px; margin: 4px 0 2px; line-height:1.05;
+  }
+  .sub{font-size:13px; opacity:.9;}
+  .pill{
+    background: rgba(26,26,26,0.1);
+    border:1px solid rgba(26,26,26,0.2);
+    color: var(--preto);
+    border-radius:100px; padding:6px 12px; font-size:12px;
+    backdrop-filter: blur(4px);
+    white-space:nowrap;
+  }
+  .tabs{
+    display:flex; gap:6px; padding: 0 14px; margin-top:-26px; position:relative; z-index:3;
+  }
+  .tab-btn{
+    flex:1; text-align:center; padding:12px 4px; border-radius:16px;
+    background:#fff; border:1px solid var(--linha);
+    font-family:'Jost'; font-size:12.5px; font-weight:500; color: var(--tinta-suave);
+    box-shadow: var(--sombra);
+    cursor:pointer; transition: all .15s ease;
+  }
+  .tab-btn.active{
+    background: linear-gradient(135deg, #1a1a1a, #333333);
+    color: var(--branco); border-color: transparent;
+  }
+  .content{ padding: 22px 16px 10px; max-width:560px; margin:0 auto;}
+  .view{display:none; animation: fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .section-title{
+    font-family:'Fraunces'; font-style:italic; font-weight:500;
+    font-size:20px; margin: 18px 2px 10px; color: var(--preto);
+  }
+  .section-title:first-child{margin-top:0;}
+
+  .treino-switch{
+    display:flex; gap:6px; margin-bottom:12px;
+  }
+  .treino-chip{
+    flex:1 1 0; min-width:0; padding:8px 2px; border-radius:14px; font-size:12.5px; font-weight:500;
+    background: var(--cinza-claro); color: var(--preto); border:1px solid var(--linha);
+    cursor:pointer; text-align:center; line-height:1.25;
+  }
+  .treino-chip span{display:block; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:400; opacity:.75; margin-top:2px;}
+  .treino-chip.active{ background: var(--preto-puro); color:#fff; border-color:var(--preto-puro);}
+
+  .card{
+    background:#fff; border:1px solid var(--linha); border-radius:18px;
+    padding:14px 14px 12px; margin-bottom:12px; box-shadow: 0 4px 16px rgba(26,26,26,0.05);
+  }
+  .card-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .ex-nome{font-size:15px; font-weight:500;}
+  .ex-foco{font-size:11.5px; color:var(--preto); background:var(--cinza-claro); border-radius:8px; padding:2px 8px; display:inline-block; margin-top:4px;}
+  .check{
+    width:26px; height:26px; border-radius:8px; border:2px solid var(--linha);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto;
+    transition: all .15s;
+  }
+  .check.done{ background: var(--preto); border-color: var(--preto); }
+  .check.done::after{content:"✓"; color:#fff; font-size:15px; font-weight:600;}
+  .badges{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .badge{font-size:11px; padding:4px 9px; border-radius:8px; background:#f5f5f5; color:var(--tinta-suave); font-weight:500;}
+  .badge.rpe{background:var(--cinza-claro); color:var(--preto);}
+  .load-row{display:flex; align-items:center; gap:8px; margin-top:10px;}
+  .load-row label{font-size:11.5px; color:var(--tinta-suave);}
+  .load-row input{
+    flex:1; border:1px solid var(--linha); border-radius:10px; padding:8px 10px;
+    font-family:'Jost'; font-size:13px; color:var(--tinta);
+  }
+  .load-row input:focus{outline:none; border-color:var(--preto);}
+  .trabalho{
+    font-size:11.5px; color:var(--preto); margin-top:8px; padding:7px 9px;
+    border-left:3px solid var(--preto); background:#f7f7f7; border-radius:0 8px 8px 0; line-height:1.45;
+  }
+
+  .save-bar{
+    position:sticky; bottom:0; padding: 12px 0 4px; background: linear-gradient(to top, #fff 60%, rgba(255,255,255,0));
+  }
+  .save-btn{
+    width:100%; border:none; padding:15px; border-radius:16px; font-family:'Jost'; font-size:15px; font-weight:500;
+    background: linear-gradient(135deg, #1a1a1a, #333333); color:#fff; cursor:pointer;
+    box-shadow: var(--sombra);
+  }
+  .save-btn:active{transform: scale(.98);}
+  .toast{
+    position:fixed; left:50%; bottom:100px; transform:translateX(-50%) translateY(20px);
+    background:var(--tinta); color:#fff; padding:10px 18px; border-radius:100px; font-size:13px;
+    opacity:0; transition: all .25s; pointer-events:none; z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .guia-item{margin-bottom:14px; padding:12px; background:#f9f9f9; border-radius:12px;}
+  .guia-desc{font-size:13px; color:var(--tinta-suave); line-height:1.6; margin-top:6px;}
+  .guia-parte{margin:8px 0 6px 0; font-weight:500; color:var(--preto); font-size:12px;}
+
+  .rpe-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .rpe-table td{padding:8px 6px; border-bottom:1px solid var(--linha); vertical-align:top;}
+  .rpe-num{
+    width:30px; height:30px; border-radius:8px; background:var(--preto); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:600; font-size:13px;
+  }
+  .rpe-note{font-size:11.5px; color:var(--tinta-suave); margin-top:10px; line-height:1.5;}
+
+  .week-switch{display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:14px;}
+  .week-chip{flex:0 0 auto; padding:7px 13px; border-radius:100px; font-size:12.5px; background:var(--cinza-claro); color:var(--preto); cursor:pointer;}
+  .week-chip.active{background:var(--preto); color:#fff;}
+  .eval-cat{margin-bottom:14px;}
+  .eval-cat-name{font-size:13.5px; font-weight:500; margin-bottom:6px;}
+  .eval-scale{display:flex; gap:6px;}
+  .eval-dot{
+    flex:1; text-align:center; padding:9px 0; border-radius:10px; border:1px solid var(--linha);
+    font-size:13px; font-weight:500; color:var(--tinta-suave); cursor:pointer;
+  }
+  .eval-dot.active{background:var(--preto); color:#fff; border-color:var(--preto);}
+  textarea.obs{
+    width:100%; border:1px solid var(--linha); border-radius:12px; padding:10px; font-family:'Jost';
+    font-size:13px; min-height:70px; resize:vertical;
+  }
+  textarea.obs:focus{outline:none; border-color:var(--preto);}
+
+  .perfil-row{display:flex; justify-content:space-between; align-items:center; padding:12px 2px; border-bottom:1px solid var(--linha); font-size:13.5px;}
+  .perfil-row:last-child{border-bottom:none;}
+  .perfil-label{color:var(--tinta-suave);}
+  .perfil-value{font-weight:500; text-align:right;}
+  .peso-edit{display:flex; align-items:center; gap:8px;}
+  .peso-edit input{width:70px; border:1px solid var(--linha); border-radius:10px; padding:6px 8px; font-family:'Jost'; font-size:13.5px; text-align:right;}
+  .inicio{color:var(--tinta-suave); font-weight:400; font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-top">
+    <div>
+      <div class="eyebrow">Hellora Consultoria</div>
+      <div class="nome">Eric Toloi</div>
+      <div class="sub">Ciclo 1</div>
+    </div>
+    <div class="pill" id="semanaPill">Semana 1</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab-btn active" data-view="treino">Treino</div>
+  <div class="tab-btn" data-view="guia">Guia</div>
+  <div class="tab-btn" data-view="avaliacao">Avaliação</div>
+  <div class="tab-btn" data-view="perfil">Perfil</div>
+</div>
+
+<div class="content">
+
+  <!-- TREINO -->
+  <div class="view active" id="view-treino">
+    <div class="week-switch" id="weekSwitchTreino"></div>
+    <div class="treino-switch" id="treinoSwitch"></div>
+    <div id="exList"></div>
+    <div class="save-bar">
+      <button class="save-btn" id="btnSalvarTreino">Salvar treino</button>
+    </div>
+  </div>
+
+  <!-- GUIA -->
+  <div class="view" id="view-guia">
+    <div class="section-title">Escala de Intensidade — RPE</div>
+    <table class="rpe-table">
+      <tr><td><div class="rpe-num">10</div></td><td>Falha total — não conseguiria completar mais nenhuma repetição.</td></tr>
+      <tr><td><div class="rpe-num">9</div></td><td>Sobraria no máximo 1 repetição — esforço muito alto.</td></tr>
+      <tr><td><div class="rpe-num">8</div></td><td>Sobrariam cerca de 2 repetições — esforço alto, controlado.</td></tr>
+      <tr><td><div class="rpe-num">7</div></td><td>Sobrariam cerca de 3 repetições — esforço moderado-alto.</td></tr>
+      <tr><td><div class="rpe-num">6</div></td><td>Sobrariam 4 ou mais repetições — esforço leve, aprendizado.</td></tr>
+    </table>
+    <div class="rpe-note"><b>Importante:</b> Semanas 1-4: sessão terapêutica — RPE 6-7, aprender os movimentos e sair bem, mas não morrendo. Semanas 5-9: RPE 7-8, carga subindo aos poucos. Semanas 10-13: RPE 8, menos repetições e mais carga (só nas máquinas e no terra). Respire sempre — nunca prenda o ar na força. Dor que desce para a perna, formigamento ou dormência: pare o treino e avise a Hellora.</div>
+
+    <div class="section-title">Guia de Execução</div>
+    <div id="guiaList"></div>
+  </div>
+
+  <!-- AVALIAÇÃO -->
+  <div class="view" id="view-avaliacao">
+    <div class="week-switch" id="weekSwitch"></div>
+    <div id="evalCats"></div>
+    <div class="eval-cat">
+      <div class="eval-cat-name">Observações da semana</div>
+      <textarea class="obs" id="evalObs" placeholder="Como foi a semana? Sentiu algo na lombar ou no meio das costas? Como dormiu? Semana pesada no trabalho?"></textarea>
+    </div>
+    <div class="save-bar">
+      <button class="save-btn" id="btnSalvarAvaliacao">Salvar avaliação</button>
+    </div>
+  </div>
+
+  <!-- PERFIL -->
+  <div class="view" id="view-perfil">
+    <div class="section-title">Perfil</div>
+    <div class="card">
+      <div class="perfil-row"><span class="perfil-label">Nome completo</span><span class="perfil-value">Eric Augusto Toloi</span></div>
+      <div class="perfil-row"><span class="perfil-label">Idade</span><span class="perfil-value">42 anos</span></div>
+      <div class="perfil-row"><span class="perfil-label">Altura</span><span class="perfil-value">1,71 m</span></div>
+      <div class="perfil-row"><span class="perfil-label">Peso no início do Ciclo 1</span><span class="perfil-value">76 kg</span></div>
+      <div class="perfil-row">
+        <span class="perfil-label">Peso atual</span>
+        <span class="peso-edit"><input type="number" id="pesoInput" step="0.1"> kg</span>
+      </div>
+      <div class="perfil-row"><span class="perfil-label">Ciclo</span><span class="perfil-value">1 · 13 semanas</span></div>
+      <div class="perfil-row"><span class="perfil-label">Frequência</span><span class="perfil-value">4 treinos/semana · academia</span></div>
+      <div class="perfil-row"><span class="perfil-label">Qualidade do sono (início)</span><span class="perfil-value">4/10</span></div>
+      <div class="perfil-row"><span class="perfil-label">Estresse diário (início)</span><span class="perfil-value">11/10</span></div>
+    </div>
+
+    <div class="section-title">Medidas</div>
+    <div class="card">
+      <div class="perfil-row"><span class="perfil-label">Cintura <span class="inicio">(início 100)</span></span><span class="peso-edit"><input type="number" step="0.5" data-medida="cintura"> cm</span></div>
+      <div class="perfil-row"><span class="perfil-label">Quadril <span class="inicio">(início 100)</span></span><span class="peso-edit"><input type="number" step="0.5" data-medida="quadril"> cm</span></div>
+      <div class="perfil-row"><span class="perfil-label">Coxa <span class="inicio">(início 54)</span></span><span class="peso-edit"><input type="number" step="0.5" data-medida="coxa"> cm</span></div>
+      <div class="perfil-row"><span class="perfil-label">Bíceps <span class="inicio">(início 33)</span></span><span class="peso-edit"><input type="number" step="0.5" data-medida="biceps"> cm</span></div>
+      <div style="font-size:11.5px; color:var(--tinta-suave); margin-top:8px; line-height:1.5;">Medir sempre no mesmo horário (de manhã, em jejum) e no mesmo lugar do corpo — a cintura na altura do umbigo.</div>
+    </div>
+
+    <div class="section-title">Objetivo</div>
+    <div class="card">
+      <div style="font-size:13.5px; line-height:1.5;"><b>Hipertrofia, condicionamento e saúde</b> — com a coluna protegida.<br><br>Foco do ciclo: fortalecer o core e a lombar, abrir os ombros, equilibrar os dois lados do corpo e ganhar força e técnica para os movimentos do trabalho (levantar, puxar e carregar barris).<br><br>Estrutura: A e C Inferior · B e D Superior. Deixe pelo menos 1 dia entre o A e o C.</div>
+    </div>
+
+    <div class="section-title">Protocolo Personalizado</div>
+    <div class="card">
+      <div style="font-size:13.5px; line-height:1.5;">
+        <b>Mobilidade:</b> ~8 min no início de cada treino, com alongamento de posterior e da frente do quadril. Veja no Guia.<br><br>
+        <b>Fortalecimento de Core:</b> Respiração Diafragmática + Dead Bug + Glute Squeeze em TODOS os treinos, 2 séries cada.<br><br>
+        <b>Lombar:</b> Nada de barra nas costas, remada curvada ou peso acima da cabeça. Leg press com a lombar sempre colada no encosto. Respiração contínua, sem prender o ar.<br><br>
+        <b>Simetria:</b> Nos exercícios de um lado só, comece sempre pelo lado direito.<br><br>
+        <b>Cardio:</b> 15–20 min no fim de todo treino (bike, elíptico ou esteira inclinada), num ritmo em que dá para conversar.<br><br>
+        <b>Progressão:</b> Suba a carga quando completar todas as séries com boa execução no RPE indicado. As séries e repetições mudam sozinhas conforme a semana.
+      </div>
+    </div>
+
+    <div class="section-title">Nossos Combinados</div>
+    <div class="card">
+      <div style="font-size:13.5px; line-height:1.7;">
+        ☐ 4 treinos por semana<br>
+        ☐ Marcar os treinos feitos e as cargas usadas<br>
+        ☐ Preencher a avaliação semanal (sono e estresse contam!)<br>
+        ☐ Dor que desce para a perna ou formigamento: parar e avisar a Hellora<br>
+        ☐ Usar a técnica certa com os barris no trabalho
+      </div>
+    </div>
+    <div class="save-bar">
+      <button class="save-btn" id="btnSalvarPerfil">Salvar peso e medidas</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Salvo!</div>
+
+<script>
+const MOB = {slug:"mobilidade", nome:"Mobilidade — início do treino (~8 min)", isMobilidade:true, subItems:[
+  {slug:"gato-camelo", nome:"Gato-camelo suave", series:1, reps:"8"},
+  {slug:"open-book", nome:"Open book (rotação torácica)", series:1, reps:"8 cada lado"},
+  {slug:"extensao-toracica-rolo", nome:"Extensão torácica no rolo", series:1, reps:"10"},
+  {slug:"along-flexor-quadril", nome:"Alongamento da frente do quadril", series:2, reps:"30 s cada lado"},
+  {slug:"along-posterior-faixa", nome:"Alongamento de posterior com faixa", series:2, reps:"30 s cada perna"}
+]};
+const CORE = {slug:"core", nome:"Fortalecimento de Core — Método Hellora", isCore:true, subItems:[
+  {slug:"respiracao-diafragmatica", nome:"Respiração Diafragmática", series:2, reps:"8 respirações"},
+  {slug:"dead-bug", nome:"Dead Bug", series:2, reps:"8 cada lado"},
+  {slug:"glute-squeeze", nome:"Glute Squeeze (deitado)", series:2, reps:"10 (3 s contraindo)"}
+]};
+const CARDIO = {slug:"cardio", nome:"Cardio — 15 a 20 min", foco:"Condicionamento · gordura abdominal", fixo:true, series:1, reps:"15-20 min", descanso:"—", rpe:"5-6", obs:"Bike, elíptico ou caminhada na esteira inclinada — ritmo em que dá para conversar"};
+
+/* Séries, repetições e RPE mudam conforme a fase da semana.
+   fixo: não muda com a fase · alta: exercício de 15 reps · forca: entra na fase de força (sem. 10-13) · lado: unilateral */
+function fase(ex, week){
+  if (ex.fixo) return {series:ex.series, reps:ex.reps, rpe:ex.rpe, descanso:ex.descanso};
+  let s, r, rpe, d;
+  if (week <= 2){ s = 2; r = ex.alta ? "15" : "12-15"; rpe = "6-7"; d = "60-90s"; }
+  else if (week <= 4){ s = 3; r = ex.alta ? "15" : "12-15"; rpe = "6-7"; d = "60-90s"; }
+  else if (week <= 9 || !ex.forca){ s = 3; r = ex.alta ? "12-15" : "10-12"; rpe = "7-8"; d = "90s"; }
+  else { s = "3-4"; r = ex.terra ? "6-8" : "6-10"; rpe = "8"; d = "2min"; }
+  if (ex.descanso) d = ex.descanso;
+  if (ex.lado) r += " cada lado";
+  return {series:s, reps:r, rpe:rpe, descanso:d};
+}
+
+const TREINOS = {
+  "A": {
+    label: "Treino A (Inferior)",
+    sub: "Levantar do chão",
+    exercicios: [
+      MOB,
+      CORE,
+      {slug:"dobradica-quadril-bastao", nome:"Dobradiça de Quadril c/ Bastão", foco:"Técnica de levantar", toWeek:4, fixo:true, series:2, reps:"10", descanso:"60s", rpe:"5-6", obs:"Sem carga — aprender o movimento. Da semana 5 em diante vira o Terra no Step", trabalho:"Ensina a pegar o barril dobrando pelo quadril, não pela coluna."},
+      {slug:"terra-kettlebell-step", nome:"Terra c/ Kettlebell no Step", foco:"Glúteo / Posterior / Força de levantar", fromWeek:5, forca:true, terra:true, load:"kg", obs:"Step na altura do joelho. Se o kettlebell mais pesado ficar leve, usar um halter em pé no mesmo step", trabalho:"Exatamente o movimento de tirar o barril do chão, na mesma altura."},
+      {slug:"leg-press-horizontal", nome:"Leg Press Horizontal", foco:"Quadríceps / Glúteo", forca:true, load:"kg", obs:"Lombar colada no encosto — o quadril não sai do banco"},
+      {slug:"agachamento-livre", nome:"Agachamento Livre (peso do corpo)", foco:"Quadríceps / Glúteo", fixo:true, series:3, reps:"12-15", descanso:"60-90s", rpe:"6-7", obs:"Sem barra nas costas", trabalho:"Agachar para pegar carga baixa quando não dá para fazer a dobradiça."},
+      {slug:"elevacao-pelvica-maquina", nome:"Elevação Pélvica na Máquina", foco:"Glúteo", forca:true, load:"kg", trabalho:"O glúteo é quem deve levantar o barril, não a lombar."},
+      {slug:"cadeira-flexora", nome:"Cadeira Flexora", foco:"Posterior de coxa", forca:true, descanso:"60-90s", load:"kg"},
+      {slug:"caminhada-fazendeiro", nome:"Caminhada do Fazendeiro", foco:"Pegada / Core / Ombros", fixo:true, series:3, reps:"20-30 m", descanso:"60-90s", rpe:"6-7", load:"kg", obs:"Carga = peso de cada halter", trabalho:"Força de pegada e tronco firme para transportar carga."},
+      {slug:"suspensao-barra", nome:"Suspensão na Barra", foco:"Pegada / Descompressão", fixo:true, series:3, reps:"20-30 s", descanso:"60s", rpe:"—", obs:"Pode apoiar a ponta dos pés num step", trabalho:"Pegada + alívio da coluna depois de um dia carregando peso."},
+      {slug:"prancha-lateral", nome:"Prancha Lateral", foco:"Core lateral", fixo:true, series:2, reps:"20-30 s cada lado", descanso:"45s", rpe:"—", trabalho:"Tronco estável ao carregar carga de um lado."},
+      CARDIO
+    ]
+  },
+  "B": {
+    label: "Treino B (Superior)",
+    sub: "Costas, peito e ombro",
+    exercicios: [
+      MOB,
+      CORE,
+      {slug:"puxada-frontal-aberta", nome:"Puxada Frontal Aberta", foco:"Costas (dorsais)", forca:true, load:"kg"},
+      {slug:"remada-maquina-apoio-peito", nome:"Remada Máquina c/ Apoio no Peito", foco:"Espessura das costas", forca:true, load:"kg", obs:"O peito não sai do apoio", trabalho:"Força de puxar com a lombar protegida."},
+      {slug:"supino-maquina", nome:"Supino na Máquina", foco:"Peitoral", forca:true, load:"kg"},
+      {slug:"crucifixo-inverso-maquina", nome:"Crucifixo Inverso na Máquina", foco:"Ombro posterior / postura", alta:true, descanso:"60s", load:"kg"},
+      {slug:"elevacao-lateral-polia-unilateral", nome:"Elevação Lateral Unilateral na Polia", foco:"Ombro lateral", alta:true, lado:true, descanso:"60s", load:"kg", obs:"Comece pelo lado direito"},
+      {slug:"rosca-direta-halteres-sentado", nome:"Rosca Direta c/ Halteres Sentado", foco:"Bíceps", descanso:"60s", load:"kg", obs:"Carga leve até esclarecer o cotovelo esquerdo"},
+      {slug:"rosca-martelo", nome:"Rosca Martelo", foco:"Bíceps / antebraço", descanso:"60s", load:"kg", obs:"Carga leve até esclarecer o cotovelo esquerdo", trabalho:"Pegada neutra, como segurar alças e barris."},
+      CARDIO
+    ]
+  },
+  "C": {
+    label: "Treino C (Inferior)",
+    sub: "Posterior e glúteo",
+    exercicios: [
+      MOB,
+      CORE,
+      {slug:"cadeira-flexora", nome:"Cadeira Flexora", foco:"Posterior de coxa", forca:true, descanso:"60-90s", load:"kg"},
+      {slug:"elevacao-pelvica-maquina", nome:"Elevação Pélvica na Máquina", foco:"Glúteo", forca:true, load:"kg", trabalho:"Força de extensão de quadril para levantar carga."},
+      {slug:"flexora-em-pe-unilateral", nome:"Flexora em Pé Unilateral", foco:"Posterior de coxa isolado", lado:true, descanso:"60s", load:"kg", obs:"Comece pela perna direita. Abdome firme, sem arquear a lombar"},
+      {slug:"extensora-unilateral", nome:"Cadeira Extensora Unilateral", foco:"Quadríceps", lado:true, descanso:"60s", load:"kg"},
+      {slug:"cadeira-abdutora", nome:"Cadeira Abdutora", foco:"Glúteo médio", alta:true, descanso:"60s", load:"kg"},
+      {slug:"caminhada-halter-unilateral", nome:"Caminhada c/ Halter Unilateral", foco:"Core lateral / Pegada", fixo:true, series:3, reps:"20 m cada lado", descanso:"60s", rpe:"6-7", load:"kg", obs:"Comece pelo lado direito", trabalho:"Carregar peso com uma mão sem entortar a coluna."},
+      {slug:"pallof-press", nome:"Pallof Press", foco:"Core anti-rotação", fixo:true, series:2, reps:"10 cada lado", descanso:"45s", rpe:"6-7", load:"kg", trabalho:"Protege a coluna de torcer ao manusear barris."},
+      CARDIO
+    ]
+  },
+  "D": {
+    label: "Treino D (Superior)",
+    sub: "Costas e ombros",
+    exercicios: [
+      MOB,
+      CORE,
+      {slug:"remada-serrote", nome:"Remada Serrote", foco:"Costas", lado:true, descanso:"60-90s", load:"kg", obs:"Comece pelo lado direito", trabalho:"Puxar carga com um braço mantendo a coluna reta."},
+      {slug:"puxada-pegada-neutra", nome:"Puxada Frontal Pegada Neutra", foco:"Costas (dorsais)", forca:true, load:"kg"},
+      {slug:"supino-inclinado-maquina", nome:"Supino Inclinado na Máquina", foco:"Peitoral superior", forca:true, load:"kg"},
+      {slug:"remada-unilateral-em-pe-polia", nome:"Remada Unilateral em Pé na Polia", foco:"Costas / Core", lado:true, descanso:"60-90s", load:"kg", obs:"Polia na altura do peito, uma perna à frente. Comece pelo lado direito", trabalho:"Imita puxar o barril — o tronco não gira."},
+      {slug:"elevacao-lateral-sentado", nome:"Elevação Lateral Sentado", foco:"Ombro lateral", alta:true, descanso:"60s", load:"kg"},
+      {slug:"face-pull", nome:"Face Pull", foco:"Ombro posterior / postura", alta:true, descanso:"60s", load:"kg"},
+      {slug:"triceps-polia-barra", nome:"Tríceps na Polia c/ Barra", foco:"Tríceps", descanso:"60s", load:"kg", obs:"Carga leve até esclarecer o cotovelo esquerdo"},
+      CARDIO
+    ]
+  }
+};
+
+const GUIA = {
+  "gato-camelo": {pos:"Em quatro apoios: mãos abaixo dos ombros, joelhos abaixo do quadril.", mec:"Soltando o ar, arredonde as costas levando o umbigo para dentro; puxando o ar, afunde levemente as costas e olhe à frente. Bem devagar.", dica:"Amplitude pequena e confortável — nunca force a lombar."},
+  "open-book": {pos:"Deitado de lado, joelhos dobrados a 90° um sobre o outro, braços estendidos à frente com as mãos juntas.", mec:"Abra o braço de cima como um livro, girando o tronco até a mão ir para o outro lado; volte devagar.", dica:"Os joelhos não se separam — quem gira é a parte alta das costas."},
+  "extensao-toracica-rolo": {pos:"Sentado no chão, rolo atravessado na altura das escápulas, mãos atrás da cabeça, quadril no chão.", mec:"Deixe a parte alta das costas 'abrir' sobre o rolo e volte; mude o rolo um pouco de lugar e repita.", dica:"O rolo nunca vai na lombar."},
+  "along-flexor-quadril": {pos:"Ajoelhado em passada: um joelho no chão, o outro pé à frente.", mec:"Contraia o glúteo da perna de trás e leve o quadril levemente à frente até sentir alongar na frente da coxa de trás. Segure 30 s.", dica:"Não arqueie a lombar — o quadril vai à frente 'encaixado'."},
+  "along-posterior-faixa": {pos:"Deitado de costas, faixa no pé, a outra perna estendida no chão.", mec:"Eleve a perna com a faixa até sentir alongar atrás da coxa e segure 30 s.", dica:"Lombar e quadril sempre no chão. Não puxe com força — é alongar, não forçar."},
+  "respiracao-diafragmatica": {pos:"Deitado de barriga para cima, joelhos dobrados, uma mão no peito e outra na barriga.", mec:"Puxe o ar pelo nariz enchendo a barriga (a mão de baixo sobe, a de cima quase não mexe) e solte devagar pela boca.", dica:"É pela barriga, não pelas costelas. É essa respiração que você usa para 'travar o abdome' antes de pegar peso."},
+  "dead-bug": {pos:"Deitado, lombar encostada no chão, braços para o teto, quadril e joelhos a 90°.", mec:"Estenda braço e perna opostos em direção ao chão, sem encostar, volte e alterne.", dica:"Se a lombar sair do chão, diminua a amplitude. Solte o ar ao estender."},
+  "glute-squeeze": {pos:"Deitado, joelhos dobrados, pés apoiados.", mec:"Faça uma leve elevação do quadril e contraia o glúteo com força por 3 s; desça.", dica:"A elevação é pequena: o objetivo é apertar o glúteo, não subir alto."},
+  "dobradica-quadril-bastao": {pos:"Em pé, pés na largura do quadril, joelhos levemente dobrados. Bastão nas costas tocando cabeça, meio das costas e sacro; uma mão atrás do pescoço e outra na lombar.", mec:"Empurre o quadril para trás (como fechar uma porta com o bumbum), o tronco inclina à frente; desça até sentir alongar atrás da coxa e volte contraindo o glúteo.", dica:"O bastão não pode desencostar dos 3 pontos — se desencostar, a coluna curvou."},
+  "terra-kettlebell-step": {pos:"Kettlebell (ou halter em pé) sobre um step entre os pés, na altura do joelho. Pés um pouco mais afastados que o quadril, pontas levemente para fora.", mec:"Faça a dobradiça e dobre um pouco os joelhos até pegar o peso; trave o abdome, ombros para trás e para baixo, e suba empurrando o chão. Desça pelo mesmo caminho até apoiar no step.", dica:"Antes de subir, 'tire a folga': puxe de leve até o corpo inteiro ficar firme. Nunca suba dando tranco."},
+  "leg-press-horizontal": {pos:"Sentado, costas e lombar inteiras apoiadas no encosto, pés na plataforma na largura do quadril.", mec:"Dobre os joelhos trazendo a plataforma até onde o quadril não sai do banco; empurre de volta sem travar os joelhos.", dica:"Se o quadril 'enrolar' ou a lombar descolar, diminua a amplitude."},
+  "agachamento-livre": {pos:"Em pé, pés na largura do quadril ou um pouco mais, pontas levemente para fora, braços à frente.", mec:"Leve o quadril para trás e para baixo como se fosse sentar, até onde mantém a coluna reta; suba empurrando o chão.", dica:"Joelhos acompanham a ponta dos pés, sem fechar para dentro. Peito aberto."},
+  "elevacao-pelvica-maquina": {pos:"Na máquina, parte alta das costas apoiada, apoio sobre o quadril, pés firmes com joelhos dobrados.", mec:"Empurre o chão com os calcanhares elevando o quadril até alinhar com o tronco; aperte o glúteo 1 s no topo e desça controlando.", dica:"No topo, queixo levemente para baixo e costelas 'fechadas' — não arqueie a lombar."},
+  "cadeira-flexora": {pos:"Sentado, costas apoiadas, rolo atrás do tornozelo, rolo de cima travando a coxa.", mec:"Dobre os joelhos puxando o rolo para baixo e volte devagar.", dica:"A volta lenta (2-3 s) é onde o posterior mais trabalha."},
+  "caminhada-fazendeiro": {pos:"Um halter pesado em cada mão, braços estendidos ao lado do corpo, ombros para trás e para baixo, olhar à frente.", mec:"Caminhe 20-30 m com passos normais. Para pegar e soltar os halteres no chão, use a dobradiça de quadril.", dica:"Abdome firme 'como se fosse levar um soco'. O tronco não balança e os ombros não caem."},
+  "suspensao-barra": {pos:"Pegada na barra fixa com palmas para a frente, na largura dos ombros. Se precisar, apoie a ponta dos pés num step.", mec:"Fique pendurado com os braços estendidos, ombros levemente ativos (a cabeça não 'afunda' entre eles), respirando normalmente.", dica:"Desça com cuidado — não solte de uma vez."},
+  "prancha-lateral": {pos:"Deitado de lado, apoiado no antebraço com o cotovelo abaixo do ombro, pernas estendidas (ou joelhos dobrados).", mec:"Eleve o quadril alinhando cabeça, tronco e pernas e segure o tempo indicado.", dica:"O quadril não cai nem vai para trás. Se ficar difícil, apoie os joelhos."},
+  "puxada-frontal-aberta": {pos:"Sentado, coxas presas no apoio, pegada aberta na barra, tronco levemente inclinado para trás.", mec:"Puxe a barra até a parte alta do peito levando os cotovelos para baixo; volte estendendo os braços com controle.", dica:"Peito aberto — puxe com as costas, não com os braços."},
+  "remada-maquina-apoio-peito": {pos:"Peito apoiado no encosto, pés firmes, braços estendidos nas pegadas.", mec:"Puxe as pegadas levando os cotovelos para trás e aproximando as escápulas; volte devagar.", dica:"O peito não desgruda do apoio — é isso que protege a lombar."},
+  "supino-maquina": {pos:"Sentado, costas apoiadas, pegadas na altura do meio do peito.", mec:"Empurre até quase estender os braços e volte controlando.", dica:"Escápulas encaixadas no encosto — os ombros não sobem."},
+  "crucifixo-inverso-maquina": {pos:"Sentado de frente para a máquina, peito no apoio, braços estendidos à frente nas pegadas.", mec:"Abra os braços para trás em arco até a linha dos ombros; volte devagar.", dica:"Cotovelos levemente dobrados e fixos. Não encolha os ombros."},
+  "elevacao-lateral-polia-unilateral": {pos:"De lado para a polia baixa, segurando o cabo com a mão de fora; a outra mão segura a máquina.", mec:"Eleve o braço pela lateral até a linha do ombro e desça devagar.", dica:"Cotovelo levemente dobrado e tronco parado. Comece pelo lado direito."},
+  "rosca-direta-halteres-sentado": {pos:"Sentado no banco com encosto, costas apoiadas, halteres ao lado do corpo com as palmas para a frente.", mec:"Dobre os cotovelos levando os halteres até os ombros e desça controlando.", dica:"Cotovelos colados ao corpo; o tronco não balança."},
+  "rosca-martelo": {pos:"Em pé ou sentado com encosto, halteres ao lado do corpo com as palmas viradas para o corpo.", mec:"Dobre os cotovelos mantendo a pegada neutra e desça controlando.", dica:"Punho firme e alinhado com o antebraço."},
+  "flexora-em-pe-unilateral": {pos:"Em pé na máquina, peito/quadril apoiados, rolo atrás do tornozelo da perna que trabalha, mãos nas pegadas.", mec:"Dobre o joelho levando o calcanhar em direção ao glúteo e volte devagar. Faça todas as repetições de uma perna e troque.", dica:"Quadril parado e abdome firme — não arqueie a lombar. Comece pela perna direita."},
+  "extensora-unilateral": {pos:"Sentado, costas apoiadas, rolo na frente do tornozelo de uma perna.", mec:"Estenda o joelho até quase travar, segure 1 s e desça devagar.", dica:"Mesmo número de repetições nas duas pernas, começando pela mais fraca."},
+  "cadeira-abdutora": {pos:"Sentado, costas apoiadas, almofadas na lateral dos joelhos.", mec:"Abra as pernas contra a resistência e volte controlando.", dica:"Não deixe o peso 'bater' na volta. Sinta a lateral do glúteo."},
+  "caminhada-halter-unilateral": {pos:"Um halter em uma mão, braço estendido ao lado do corpo; a outra mão solta ou na cintura.", mec:"Caminhe 20 m e troque de mão.", dica:"O corpo não inclina para o lado do peso — os dois ombros na mesma altura, como se tivesse um copo d'água em cada um."},
+  "pallof-press": {pos:"De lado para a polia, cabo na altura do peito, segurando com as duas mãos junto ao peito; pés na largura do quadril, joelhos levemente dobrados.", mec:"Estenda os braços à frente, segure 2 s e volte ao peito. Faça todas as repetições e troque de lado.", dica:"A polia tenta girar o seu corpo — o tronco não deixa. Só os braços se movem."},
+  "remada-serrote": {pos:"Mão e joelho do mesmo lado apoiados no banco, a outra perna no chão, coluna reta paralela ao chão, halter na mão livre.", mec:"Puxe o halter levando o cotovelo para trás, rente ao corpo, em direção ao quadril; desça estendendo o braço.", dica:"Não gire o tronco para subir o peso. Comece pelo lado direito."},
+  "puxada-pegada-neutra": {pos:"Sentado, coxas presas no apoio, pegada neutra (palmas uma de frente para a outra).", mec:"Puxe até a parte alta do peito com os cotovelos apontando para baixo; volte controlando.", dica:"Peito aberto, sem jogar o tronco para trás."},
+  "supino-inclinado-maquina": {pos:"Sentado com encosto inclinado, costas apoiadas, pegadas na altura da parte alta do peito.", mec:"Empurre até quase estender os braços e volte controlando.", dica:"Escápulas encaixadas no encosto."},
+  "remada-unilateral-em-pe-polia": {pos:"De frente para a polia na altura do peito, uma perna à frente (a do lado oposto ao braço que puxa), tronco ereto, abdome firme.", mec:"Puxe o cabo em linha reta levando o cotovelo para trás até a mão chegar na lateral da costela; volte até estender o braço sem deixar o ombro ir para a frente.", dica:"Quadril e peito sempre virados para a polia — se o tronco girar, a carga está alta."},
+  "elevacao-lateral-sentado": {pos:"Sentado no banco com encosto, halteres ao lado do corpo.", mec:"Eleve os braços pelas laterais até a linha dos ombros e desça devagar.", dica:"Cotovelos levemente dobrados; sem impulso do tronco."},
+  "face-pull": {pos:"De frente para a polia alta com corda, pegada com os polegares para trás, 2 passos para trás.", mec:"Puxe a corda em direção ao rosto abrindo os cotovelos e girando as mãos para trás; volte devagar.", dica:"No final, as mãos ficam na altura das orelhas, como quem 'mostra os músculos'."},
+  "triceps-polia-barra": {pos:"Em pé de frente para a polia alta, pegada na barra, cotovelos colados ao corpo.", mec:"Estenda os cotovelos empurrando a barra para baixo e volte até 90°.", dica:"Só o antebraço se move — cotovelos parados."},
+  "cardio": {pos:"Bike, elíptico ou esteira inclinada (6-8%, ~5,5 km/h).", mec:"15-20 min em ritmo contínuo, num ritmo em que dá para conversar.", dica:"Constância vale mais que intensidade — é aqui que a barriga começa a diminuir, junto com a alimentação."}
+};
+
+const EVAL_CATS = [
+  {key:"freq", label:"Frequência (fez os treinos)"},
+  {key:"dor", label:"Dor ou desconforto (lombar / costas)"},
+  {key:"sono", label:"Sono"},
+  {key:"stress", label:"Estresse"},
+  {key:"energia", label:"Energia"},
+  {key:"alim", label:"Alimentação"}
+];
+
+const TOTAL_SEMANAS = 13;
+
+let state = {
+  peso: 76,
+  medidas: {},
+  _currentTreino: "A",
+  _currentWeek: 1,
+  _evalWeek: 1,
+  evalNotas: {},
+  evalObs: {}
+};
+
+function keyFor(week, treino, slug){ return `w${week}-t${treino}-${slug}`; }
+
+function getLastLoad(treino, slug, week){
+  for (let w = week - 1; w >= 1; w--){
+    const k = keyFor(w, treino, slug);
+    if (state[k] && state[k].load) return state[k].load;
+  }
+  return '';
+}
+
+function saveLocal(){
+  try{ localStorage.setItem('eric_toloi_state', JSON.stringify(state)); }catch(e){}
+}
+
+function loadLocal(){
+  let raw = null;
+  try{ raw = localStorage.getItem('eric_toloi_state'); }catch(e){}
+  if (raw){
+    try{
+      Object.assign(state, JSON.parse(raw));
+    }catch(e){}
+  }
+}
+
+let saveTimer = null;
+let saveInFlight = false;
+let savePendingAfterFlight = false;
+
+const firebaseConfig = {
+  databaseURL: "https://helloradana-consultoria-default-rtdb.firebaseio.com"
+};
+
+const ALUNO_ID = "eric-toloi";
+let stateRef = null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  stateRef = db.ref('/alunos/' + ALUNO_ID + '/state');
+}catch(e){ console.warn('Firebase indisponível — usando só o armazenamento local'); }
+
+function persist(){
+  state._updated = new Date().toISOString();
+  saveLocal();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSaveToFirebase, 350);
+}
+
+function flushSaveToFirebase(){
+  if (!stateRef) return;
+  if (saveInFlight){ savePendingAfterFlight = true; return; }
+  saveInFlight = true;
+  stateRef.set(state).catch(()=>{ console.warn('Firebase offline'); }).finally(()=>{
+    saveInFlight = false;
+    if (savePendingAfterFlight){
+      savePendingAfterFlight = false;
+      flushSaveToFirebase();
+    }
+  });
+}
+
+function loadFromFirebase(cb){
+  if (!stateRef){ cb && cb(); return; }
+  stateRef.once('value').then(snap=>{
+    const val = snap.val();
+    if (val) Object.assign(state, val);
+    cb && cb();
+  }).catch(()=>{ cb && cb(); });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+  });
+});
+
+function renderWeekSwitchTreino(){
+  const el = document.getElementById('weekSwitchTreino');
+  el.innerHTML = '';
+  for (let w=1; w<=TOTAL_SEMANAS; w++){
+    const chip = document.createElement('div');
+    chip.className = 'week-chip' + (state._currentWeek === w ? ' active' : '');
+    chip.textContent = 'Sem ' + w;
+    chip.addEventListener('click', ()=>{
+      state._currentWeek = w;
+      persist();
+      renderWeekSwitchTreino();
+      renderExercicios();
+      updateSemanaPill();
+    });
+    el.appendChild(chip);
+  }
+}
+
+function renderTreinoSwitch(){
+  const el = document.getElementById('treinoSwitch');
+  el.innerHTML = '';
+  Object.keys(TREINOS).forEach(key=>{
+    const chip = document.createElement('div');
+    chip.className = 'treino-chip' + (state._currentTreino === key ? ' active' : '');
+    const partes = TREINOS[key].label.split(' (');
+    chip.innerHTML = partes[0] + (partes[1] ? '<span>' + partes[1].replace(')', '') + '</span>' : '');
+    chip.addEventListener('click', ()=>{
+      state._currentTreino = key;
+      persist();
+      renderTreinoSwitch();
+      renderExercicios();
+    });
+    el.appendChild(chip);
+  });
+}
+
+function renderExercicios(){
+  const treino = TREINOS[state._currentTreino];
+  const list = document.getElementById('exList');
+  list.innerHTML = '';
+
+  const week = state._currentWeek;
+  const treinoKey = state._currentTreino;
+
+  treino.exercicios.forEach(ex=>{
+    if (ex.fromWeek && week < ex.fromWeek) return;
+    if (ex.toWeek && week > ex.toWeek) return;
+    const k = keyFor(week, treinoKey, ex.slug);
+    const saved = state[k] || {done:false, load:""};
+    const loadValue = saved.load || getLastLoad(treinoKey, ex.slug, week);
+    if (ex.load && !saved.load && loadValue){
+      state[k] = {done: saved.done, load: loadValue};
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    if (ex.isMobilidade || ex.isCore || ex.isAquec){
+      let subHtml = '';
+      ex.subItems.forEach(sub=>{
+        subHtml += `<div style="font-size:12.5px; color:var(--tinta-suave); margin: 6px 0; padding: 6px 0; border-bottom: 1px solid var(--linha);">
+          <span style="font-weight:500;">${sub.nome}</span> — ${sub.series}x${sub.reps}
+        </div>`;
+      });
+      card.innerHTML = `
+        <div class="card-head">
+          <div>
+            <div class="ex-nome">${ex.nome}</div>
+          </div>
+          <div class="check ${saved.done ? 'done' : ''}" data-key="${k}"></div>
+        </div>
+        <div style="margin-top:8px;">
+          ${subHtml}
+        </div>
+        ${ex.isMobilidade ? `<div style="font-size:11.5px; color:var(--tinta-suave); margin-top:6px;">Como fazer cada um: veja no Guia</div>` : ''}
+      `;
+    } else {
+      const f = fase(ex, week);
+      card.innerHTML = `
+        <div class="card-head">
+          <div>
+            <div class="ex-nome">${ex.trabalho ? '🔧 ' : ''}${ex.nome}</div>
+            <div class="ex-foco">${ex.foco}</div>
+          </div>
+          <div class="check ${saved.done ? 'done' : ''}" data-key="${k}"></div>
+        </div>
+        <div class="badges">
+          <div class="badge">${f.series} ${f.series === 1 ? 'série' : 'séries'}</div>
+          <div class="badge">${f.reps}</div>
+          <div class="badge">${f.descanso}</div>
+          <div class="badge rpe">RPE ${f.rpe}</div>
+        </div>
+        ${ex.load ? `<div class="load-row">
+          <label>Carga:</label>
+          <input type="text" inputmode="decimal" placeholder="kg" data-load="${k}" value="${loadValue}">
+        </div>` : ''}
+        ${ex.obs ? `<div style="font-size:11.5px; color:var(--tinta-suave); margin-top:8px;">💡 ${ex.obs}</div>` : ''}
+        ${ex.trabalho ? `<div class="trabalho">🔧 <b>No trabalho:</b> ${ex.trabalho}</div>` : ''}
+      `;
+    }
+
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll('.check').forEach(chk=>{
+    chk.addEventListener('click', ()=>{
+      const k = chk.dataset.key;
+      const current = state[k] || {done:false, load:""};
+      current.done = !current.done;
+      state[k] = current;
+      chk.classList.toggle('done');
+      persist();
+    });
+  });
+
+  list.querySelectorAll('[data-load]').forEach(input=>{
+    input.addEventListener('input', ()=>{
+      const k = input.dataset.load;
+      const current = state[k] || {done:false, load:""};
+      const num = parseFloat(String(input.value).replace(',', '.'));
+      current.load = isNaN(num) ? '' : num;
+      state[k] = current;
+      persist();
+    });
+  });
+}
+
+document.getElementById('btnSalvarTreino').addEventListener('click', ()=>{
+  persist();
+  showToast('Treino salvo!');
+});
+
+function guiaCard(nome, foco, g, trabalho){
+  const div = document.createElement('div');
+  div.className = 'guia-item';
+  div.innerHTML = `
+    <div class="ex-nome" style="font-size:14px;">${trabalho ? '🔧 ' : ''}${nome}</div>
+    ${foco ? `<div class="ex-foco">${foco}</div>` : ''}
+    <div class="guia-parte">📍 Posicionamento</div>
+    <div class="guia-desc">${g.pos}</div>
+    <div class="guia-parte">⚙️ Mecânica do Movimento</div>
+    <div class="guia-desc">${g.mec}</div>
+    <div class="guia-parte">💡 Dica</div>
+    <div class="guia-desc">${g.dica}</div>
+    ${trabalho ? `<div class="trabalho">🔧 <b>No trabalho:</b> ${trabalho}</div>` : ''}
+  `;
+  return div;
+}
+
+function renderGuia(){
+  const el = document.getElementById('guiaList');
+  el.innerHTML = '';
+  const vistos = new Set();
+  Object.values(TREINOS).forEach(treino=>{
+    treino.exercicios.forEach(ex=>{
+      if (ex.subItems){
+        ex.subItems.forEach(sub=>{
+          if (sub.slug && GUIA[sub.slug] && !vistos.has(sub.slug)){
+            vistos.add(sub.slug);
+            el.appendChild(guiaCard(sub.nome, ex.isCore ? 'Core Hellora' : 'Mobilidade', GUIA[sub.slug]));
+          }
+        });
+      } else if (GUIA[ex.slug] && !vistos.has(ex.slug)){
+        vistos.add(ex.slug);
+        el.appendChild(guiaCard(ex.nome, ex.foco, GUIA[ex.slug], ex.trabalho));
+      }
+    });
+  });
+}
+
+function renderWeekSwitch(){
+  const el = document.getElementById('weekSwitch');
+  el.innerHTML = '';
+  for (let w=1; w<=TOTAL_SEMANAS; w++){
+    const chip = document.createElement('div');
+    chip.className = 'week-chip' + (state._evalWeek === w ? ' active' : '');
+    chip.textContent = 'Sem ' + w;
+    chip.addEventListener('click', ()=>{
+      state._evalWeek = w;
+      persist();
+      renderWeekSwitch();
+      renderEvalCats();
+    });
+    el.appendChild(chip);
+  }
+}
+
+function renderEvalCats(){
+  const el = document.getElementById('evalCats');
+  el.innerHTML = '';
+  const week = state._evalWeek;
+  const weekKey = week;
+  const notas = (state.evalNotas && state.evalNotas[weekKey]) || {};
+
+  EVAL_CATS.forEach(cat=>{
+    const div = document.createElement('div');
+    div.className = 'eval-cat';
+    let scaleHtml = '';
+    for (let n=1; n<=5; n++){
+      const active = notas[cat.key] === n ? ' active' : '';
+      scaleHtml += `<div class="eval-dot${active}" data-cat="${cat.key}" data-val="${n}">${n}</div>`;
+    }
+    div.innerHTML = `<div class="eval-cat-name">${cat.label}</div><div class="eval-scale">${scaleHtml}</div>`;
+    el.appendChild(div);
+  });
+
+  el.querySelectorAll('.eval-dot').forEach(dot=>{
+    dot.addEventListener('click', ()=>{
+      const cat = dot.dataset.cat;
+      const val = parseInt(dot.dataset.val);
+      if (!state.evalNotas) state.evalNotas = {};
+      if (!state.evalNotas[weekKey]) state.evalNotas[weekKey] = {};
+      state.evalNotas[weekKey][cat] = val;
+      persist();
+      renderEvalCats();
+    });
+  });
+
+  document.getElementById('evalObs').value = (state.evalObs && state.evalObs[weekKey]) || '';
+}
+
+document.getElementById('evalObs').addEventListener('input', (e)=>{
+  const weekKey = state._evalWeek;
+  if (!state.evalObs) state.evalObs = {};
+  state.evalObs[weekKey] = e.target.value;
+  persist();
+});
+
+document.getElementById('btnSalvarAvaliacao').addEventListener('click', ()=>{
+  persist();
+  showToast('Avaliação salva!');
+});
+
+function renderPerfil(){
+  document.getElementById('pesoInput').value = state.peso != null ? state.peso : 76;
+  const m = state.medidas || {};
+  document.querySelectorAll('[data-medida]').forEach(inp=>{
+    const v = m[inp.dataset.medida];
+    inp.value = (v != null && v !== '') ? v : '';
+  });
+}
+
+document.getElementById('btnSalvarPerfil').addEventListener('click', ()=>{
+  const val = parseFloat(document.getElementById('pesoInput').value);
+  if (!isNaN(val)) state.peso = val;
+  if (!state.medidas) state.medidas = {};
+  document.querySelectorAll('[data-medida]').forEach(inp=>{
+    const v = parseFloat(String(inp.value).replace(',', '.'));
+    if (!isNaN(v)) state.medidas[inp.dataset.medida] = v;
+  });
+  persist();
+  showToast('Peso e medidas atualizados!');
+});
+
+function updateSemanaPill(){
+  document.getElementById('semanaPill').textContent = 'Semana ' + state._currentWeek;
+}
+
+function renderAll(){
+  renderWeekSwitchTreino();
+  renderTreinoSwitch();
+  renderExercicios();
+  renderGuia();
+  renderWeekSwitch();
+  renderEvalCats();
+  renderPerfil();
+  updateSemanaPill();
+}
+
+loadLocal();
+loadFromFirebase(()=>{
+  renderAll();
+});
+</script>
+</body>
+</html>
